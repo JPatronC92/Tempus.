@@ -1,0 +1,56 @@
+name: 🛡️ Decision Database CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # 1. Frontend & Dashboard (Next.js)
+  frontend-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Tempus-Engine/tempus-dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Tempus-Engine/tempus-dashboard/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Check (WASM experiments enabled)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8001
+
+  # 2. Governance Kernel (Python & Rust)
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python deps
+        run: |
+          cd Tempus-Engine
+          python -m pip install --upgrade pip
+          pip install ruff pytest
+      - name: Lint with Ruff (Elite standards)
+        run: |
+          cd Tempus-Engine
+          ruff check .
+
+  # 3. Docker Compose (Infrastructure Integrity)
+  docker-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Docker Compose config
+        run: docker compose config
