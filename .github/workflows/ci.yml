@@ -10,21 +10,28 @@ jobs:
   # 1. Frontend & Dashboard (Next.js)
   frontend-check:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Tempus-Engine/tempus-dashboard
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install dependencies
+      
+      # Prepare local dependencies
+      - name: Install tempus-node
+        working-directory: Tempus-Engine/tempus-node
         run: npm install --legacy-peer-deps
-      - name: Build Check (WASM experiments enabled)
+
+      # Build Dashboard
+      - name: Install Dashboard dependencies
+        working-directory: Tempus-Engine/tempus-dashboard
+        run: npm install --legacy-peer-deps
+      
+      - name: Build Dashboard
+        working-directory: Tempus-Engine/tempus-dashboard
         run: |
-          # We use 'CI=false' to prevent Nexjs from treating warnings as errors
           export CI=false
+          export NEXT_TELEMETRY_DISABLED=1
           npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8001
