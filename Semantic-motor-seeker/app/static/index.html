@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Engine B2B | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .accent-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .online { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .offline { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 glass border-r border-slate-800 z-50">
+        <div class="p-6">
+            <div class="flex items-center gap-2 mb-8">
+                <i data-lucide="zap" class="text-blue-500 fill-blue-500"></i>
+                <h1 class="text-xl font-bold tracking-tight">Semantic <span class="text-blue-500">B2B</span></h1>
+            </div>
+
+            <nav class="space-y-2">
+                <button onclick="showSection('overview')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600/10 text-blue-400 font-medium transition-all hover:bg-blue-600/20">
+                    <i data-lucide="layout-dashboard" size="20"></i> Vista General
+                </button>
+                <button onclick="showSection('search')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+                    <i data-lucide="search" size="20"></i> Playground
+                </button>
+                <button onclick="showSection('documents')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+                    <i data-lucide="files" size="20"></i> Documentos
+                </button>
+                <button onclick="showSection('stats')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 transition-all">
+                    <i data-lucide="bar-chart-3" size="20"></i> Estadísticas
+                </button>
+            </nav>
+        </div>
+
+        <div class="absolute bottom-0 w-full p-6 border-t border-slate-800">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full accent-gradient flex items-center justify-center font-bold">SK</div>
+                <div>
+                    <p class="text-sm font-semibold">API Key Activa</p>
+                    <p id="api-key-display" class="text-xs text-slate-500 font-mono truncate w-32">sk_live_12345</p>
+                </div>
+            </div>
+            <button onclick="changeApiKey()" class="w-full py-2 px-3 text-xs bg-slate-800 hover:bg-slate-700 rounded transition-colors">Cambiar Key</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 id="section-title" class="text-2xl font-bold">Estado del Sistema</h2>
+                <p id="section-desc" class="text-slate-500">Monitorización en tiempo real del motor semántico.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="px-4 py-2 glass rounded-full flex items-center">
+                    <span class="status-dot online"></span>
+                    <span class="text-xs font-medium uppercase tracking-wider">Engine v2.0.0 Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Section: Overview -->
+        <section id="section-overview" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass p-6 rounded-2xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-500/10 rounded-xl text-blue-500"><i data-lucide="cpu"></i></div>
+                    <span id="rust-badge" class="px-2 py-1 bg-slate-800 text-[10px] rounded uppercase font-bold text-slate-400">Python Mode</span>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Aceleración Rust</h3>
+                <p id="rust-status" class="text-xl font-bold">Desactivado</p>
+                <p class="text-xs text-slate-500 mt-2">Fallback activo por arquitectura CPU.</p>
+            </div>
+
+            <div class="glass p-6 rounded-2xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-500"><i data-lucide="database"></i></div>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Documentos en Qdrant</h3>
+                <p id="total-docs" class="text-xl font-bold">Cargando...</p>
+                <p class="text-xs text-slate-500 mt-2 text-emerald-500 flex items-center gap-1">
+                    <i data-lucide="check-circle" size="12"></i> Persistencia Activa
+                </p>
+            </div>
+
+            <div class="glass p-6 rounded-2xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-purple-500/10 rounded-xl text-purple-500"><i data-lucide="activity"></i></div>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Uso de API (Hoy)</h3>
+                <p id="usage-today" class="text-xl font-bold">0 peticiones</p>
+                <p class="text-xs text-slate-500 mt-2">Plan Premium (Límite: 1000/min)</p>
+            </div>
+
+            <div class="col-span-full glass p-6 rounded-2xl">
+                <h3 class="font-bold mb-4">Endpoints de Integración</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 text-[10px] font-bold rounded">POST</span>
+                            <span class="text-sm font-mono text-slate-300">/v1/search</span>
+                        </div>
+                        <button onclick="copyToClipboard('http://localhost:8000/v1/search')" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="copy" size="16"></i></button>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-500 text-[10px] font-bold rounded">POST</span>
+                            <span class="text-sm font-mono text-slate-300">/v1/ingest/files</span>
+                        </div>
+                        <button onclick="copyToClipboard('http://localhost:8000/v1/ingest/files')" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="copy" size="16"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Search Playground -->
+        <section id="section-search" class="hidden space-y-6">
+            <div class="glass p-6 rounded-2xl">
+                <div class="relative mb-4">
+                    <input type="text" id="search-input" placeholder="¿Qué quieres encontrar en tus documentos?" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-4 px-12 focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg transition-all">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                    <button onclick="performSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-semibold transition-colors">Buscar</button>
+                </div>
+                <div class="flex gap-4 text-xs text-slate-400">
+                    <span class="flex items-center gap-1"><i data-lucide="info" size="14"></i> Resultados Top-K: 5</span>
+                    <span class="flex items-center gap-1"><i data-lucide="sliders" size="14"></i> Umbral: 0.3</span>
+                </div>
+            </div>
+
+            <div id="search-results" class="space-y-4">
+                <div class="text-center py-20 text-slate-600">
+                    <i data-lucide="search" size="48" class="mx-auto mb-4 opacity-20"></i>
+                    <p>Introduce una consulta para probar la relevancia semántica.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Documents -->
+        <section id="section-documents" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Upload Area -->
+                <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-2xl p-10 text-center hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer group">
+                    <i data-lucide="upload-cloud" size="48" class="mx-auto mb-4 text-slate-500 group-hover:text-blue-500 transition-colors"></i>
+                    <h3 class="text-lg font-semibold mb-2">Subir Documentos</h3>
+                    <p class="text-slate-500 text-sm mb-4">Arrastra PDFs, DOCX, CSV o Excel para indexarlos.</p>
+                    <input type="file" id="file-input" class="hidden" multiple onchange="handleFileUpload(event)">
+                    <button onclick="document.getElementById('file-input').click()" class="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-lg text-sm transition-colors">Seleccionar Archivos</button>
+                </div>
+
+                <!-- Index Stats -->
+                <div class="glass p-6 rounded-2xl">
+                    <h3 class="font-bold mb-4">Estado del Índice</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Dimensión Vectorial</span>
+                            <span class="text-sm font-mono">384 (MiniLM-L6)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Almacenamiento</span>
+                            <span class="text-sm">Qdrant Persistent</span>
+                        </div>
+                        <div class="pt-4 border-t border-slate-800">
+                            <button onclick="clearIndex()" class="text-xs text-red-500 hover:text-red-400 flex items-center gap-2 transition-colors">
+                                <i data-lucide="trash-2" size="14"></i> Purgar Índice del Cliente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-2xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-900/50 border-b border-slate-800">
+                            <th class="p-4 text-xs font-bold text-slate-500 uppercase">Documento ID</th>
+                            <th class="p-4 text-xs font-bold text-slate-500 uppercase">Texto (Fragmento)</th>
+                            <th class="p-4 text-xs font-bold text-slate-500 uppercase text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="docs-list">
+                        <!-- Documents will appear here -->
+                        <tr><td colspan="3" class="p-10 text-center text-slate-600">Indexando el mundo...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section: Stats -->
+        <section id="section-stats" class="hidden">
+            <div class="glass p-10 rounded-2xl text-center">
+                <i data-lucide="construction" size="64" class="mx-auto mb-6 text-blue-500 opacity-50"></i>
+                <h3 class="text-2xl font-bold mb-2">Panel de Analítica Avanzada</h3>
+                <p class="text-slate-500 mb-8 max-w-md mx-auto">Esta sección permite ver patrones de búsqueda, términos más frecuentes y evolución del coste por búsqueda.</p>
+                <div class="w-full h-48 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center justify-center italic text-slate-700">
+                    [Módulo de Gráficos de Consumo Histórico]
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: API Key -->
+    <div id="api-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="glass max-w-md w-full p-8 rounded-3xl shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Configurar Acceso B2B</h3>
+            <p class="text-slate-400 text-sm mb-6">Introduce tu X-API-Key para autenticarte con el motor.</p>
+            <input type="text" id="api-key-input" placeholder="sk_live_..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+            <div class="flex gap-4">
+                <button onclick="saveApiKey()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all">Conectar</button>
+                <button onclick="closeApiModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-bold transition-all">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentApiKey = localStorage.getItem('api_key') || 'sk_live_12345';
+        
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            document.getElementById('api-key-display').innerText = currentApiKey;
+            refreshStats();
+            
+            // Setup Drag & Drop
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('bg-blue-500/10'); };
+            dropZone.ondragleave = () => { dropZone.classList.remove('bg-blue-500/10'); };
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('bg-blue-500/10');
+                handleFileUpload({ target: { files: e.dataTransfer.files } });
+            };
+        });
+
+        function showSection(sectionId) {
+            // Hide all
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            // Remove active classes from nav
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('bg-blue-600/10', 'text-blue-400');
+                n.classList.add('text-slate-400');
+            });
+
+            // Show target
+            document.getElementById('section-' + sectionId).classList.remove('hidden');
+            
+            // Header updates
+            const titles = {
+                'overview': ['Estado del Sistema', 'Monitorización en tiempo real del motor semántico.'],
+                'search': ['Playground de Búsqueda', 'Prueba la inteligencia semántica del motor.'],
+                'documents': ['Gestión de Conocimiento', 'Sube y gestiona los documentos indexados.'],
+                'stats': ['Analítica B2B', 'Métricas de consumo y rendimiento.']
+            };
+            document.getElementById('section-title').innerText = titles[sectionId][0];
+            document.getElementById('section-desc').innerText = titles[sectionId][1];
+
+            // Refresh specific data
+            if(sectionId === 'overview') refreshStats();
+            if(sectionId === 'documents') loadDocuments();
+        }
+
+        async function loadDocuments() {
+            const listContainer = document.getElementById('docs-list');
+            listContainer.innerHTML = '<tr><td colspan="3" class="p-10 text-center animate-pulse text-slate-500">Recuperando registros...</td></tr>';
+
+            try {
+                const res = await fetch('/v1/documents', { headers: { 'X-API-Key': currentApiKey } });
+                const docs = await res.json();
+                
+                listContainer.innerHTML = '';
+                if(docs.length === 0) {
+                    listContainer.innerHTML = '<tr><td colspan="3" class="p-10 text-center text-slate-600">No hay documentos indexados para esta API Key.</td></tr>';
+                } else {
+                    docs.forEach(doc => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors';
+                        const dateStr = doc.indexed_at ? new Date(doc.indexed_at).toLocaleString() : 'N/A';
+                        tr.innerHTML = `
+                            <td class="p-4"><span class="font-mono text-xs text-blue-400">${doc.id}</span><br><span class="text-[10px] text-slate-500">${dateStr}</span></td>
+                            <td class="p-4 text-sm text-slate-400 max-w-md truncate">${doc.text_snippet}</td>
+                            <td class="p-4 text-right">
+                                <button onclick="deleteDoc('${doc.id}')" class="text-slate-600 hover:text-red-500 transition-colors"><i data-lucide="trash-2" size="16"></i></button>
+                            </td>
+                        `;
+                        listContainer.appendChild(tr);
+                    });
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                listContainer.innerHTML = '<tr><td colspan="3" class="p-10 text-center text-red-500">Error al cargar documentos.</td></tr>';
+            }
+        }
+
+        async function deleteDoc(id) {
+            if(!confirm("¿Eliminar este documento?")) return;
+            await fetch(`/v1/documents/${id}`, { method: 'DELETE', headers: { 'X-API-Key': currentApiKey } });
+            loadDocuments();
+            refreshStats();
+        }
+
+        async function refreshStats() {
+            try {
+                const [healthRes, statsRes, usageRes] = await Promise.all([
+                    fetch('/health'),
+                    fetch('/v1/stats', { headers: { 'X-API-Key': currentApiKey } }),
+                    fetch('/v1/usage', { headers: { 'X-API-Key': currentApiKey } })
+                ]);
+
+                if (healthRes.ok) {
+                    const health = await healthRes.json();
+                    const rustBadge = document.getElementById('rust-badge');
+                    const rustStatus = document.getElementById('rust-status');
+                    if (health.rust_core_available) {
+                        rustBadge.innerText = 'Rust Turbo';
+                        rustBadge.className = 'px-2 py-1 bg-emerald-500/20 text-emerald-500 text-[10px] rounded uppercase font-bold';
+                        rustStatus.innerText = 'Activado';
+                    } else {
+                        rustBadge.innerText = 'Python Mode';
+                        rustStatus.innerText = 'Estandar';
+                    }
+                }
+
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('total-docs').innerText = stats.total_documents + ' Vectores';
+                }
+
+                if (usageRes.ok) {
+                    const usage = await usageRes.json();
+                    document.getElementById('usage-today').innerText = usage.usage.requests_today + ' peticiones';
+                }
+            } catch (e) {
+                console.error("Error refreshing stats", e);
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('search-input').value;
+            if(!query) return;
+
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.innerHTML = '<div class="text-center py-20 animate-pulse text-blue-500"><i data-lucide="loader-2" class="animate-spin mx-auto mb-2"></i> Procesando embeddings...</div>';
+            lucide.createIcons();
+
+            try {
+                const res = await fetch('/v1/search', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': currentApiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, top_k: 5 })
+                });
+                const data = await res.json();
+                
+                resultsContainer.innerHTML = '';
+                if(data.results.length === 0) {
+                    resultsContainer.innerHTML = '<div class="glass p-10 text-center text-slate-500 rounded-2xl">No se encontraron resultados relevantes.</div>';
+                } else {
+                    data.results.forEach(res => {
+                        const div = document.createElement('div');
+                        div.className = 'glass p-6 rounded-2xl hover:border-blue-500/50 transition-all group';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Documento: ${res.id}</span>
+                                <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded">${(res.score * 100).toFixed(1)}% Similitud</span>
+                            </div>
+                            <p class="text-slate-300 leading-relaxed">${res.text_snippet}</p>
+                            <div class="mt-4 flex gap-2">
+                                ${Object.keys(res.metadata).map(k => `<span class="px-2 py-0.5 bg-slate-800 text-slate-500 text-[10px] rounded">${k}: ${res.metadata[k]}</span>`).join('')}
+                            </div>
+                        `;
+                        resultsContainer.appendChild(div);
+                    });
+                }
+                
+                // Add timing info
+                const timing = document.createElement('div');
+                timing.className = 'text-center text-[10px] text-slate-600 uppercase font-bold py-4';
+                timing.innerText = `Búsqueda completada en ${data.processing_time_ms.toFixed(2)}ms`;
+                resultsContainer.appendChild(timing);
+
+            } catch (e) {
+                resultsContainer.innerHTML = '<div class="glass p-10 text-center text-red-500 rounded-2xl">Error en el servidor. Verifica tu API Key.</div>';
+            }
+        }
+
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            if(!files.length) return;
+
+            for(let file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('metadata', JSON.stringify({ source: 'dashboard', uploaded_at: new Date().toISOString() }));
+
+                try {
+                    const res = await fetch('/v1/ingest/files', {
+                        method: 'POST',
+                        headers: { 'X-API-Key': currentApiKey },
+                        body: formData
+                    });
+                    if(res.ok) {
+                        alert(`¡${file.name} indexado correctamente!`);
+                        refreshStats();
+                    } else {
+                        alert(`Error subiendo ${file.name}`);
+                    }
+                } catch (e) {
+                    alert(`Error de conexión al subir ${file.name}`);
+                }
+            }
+        }
+
+        async function clearIndex() {
+            if(!confirm("¿Estás seguro? Se borrarán todos tus vectores permanentemente.")) return;
+            try {
+                await fetch('/v1/index', { method: 'DELETE', headers: { 'X-API-Key': currentApiKey } });
+                refreshStats();
+                alert("Índice purgado.");
+            } catch (e) { alert("Error al borrar."); }
+        }
+
+        function changeApiKey() { document.getElementById('api-modal').classList.remove('hidden'); }
+        function closeApiModal() { document.getElementById('api-modal').classList.add('hidden'); }
+        function saveApiKey() {
+            const val = document.getElementById('api-key-input').value;
+            if(val) {
+                currentApiKey = val;
+                localStorage.setItem('api_key', val);
+                document.getElementById('api-key-display').innerText = val;
+                closeApiModal();
+                refreshStats();
+            }
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert("Enlace copiado al portapapeles");
+        }
+    </script>
+</body>
+</html>
