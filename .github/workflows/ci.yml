@@ -19,17 +19,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Tempus-Engine/tempus-dashboard/package-lock.json
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
       - name: Build Check (WASM experiments enabled)
-        run: npm run build
+        run: |
+          # We use 'CI=false' to prevent Nexjs from treating warnings as errors
+          export CI=false
+          npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8001
           NEXT_PUBLIC_SEMANTIC_API_URL: http://localhost:8000
-          # Skip CI errors for build check in initial release
-          CI: false
 
   # 2. Governance Kernel (Python & Rust)
   backend-check:
