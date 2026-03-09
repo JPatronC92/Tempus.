@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tempus | Simulador de Comisiones",
+  title: "Tempus DDB | The Immune System for AI",
   description:
-    "Simula modelos de comisiones al instante con el motor Tempus en Rust/WebAssembly. 100% en tu navegador, sin registro, gratis.",
+    "Tempus Decision Database (DDB) provides cryptographic immutability and governance for AI Agents. Audit, trace, and secure every LLM decision.",
 };
 
 export default function RootLayout({

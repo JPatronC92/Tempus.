@@ -280,6 +280,14 @@
   color: var(--text-primary);
 }
 
+.helperText {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+  max-width: 90%;
+}
+
 .verifyBtn {
   background: var(--brand-primary);
   color: var(--bg-deep);

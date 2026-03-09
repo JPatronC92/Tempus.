@@ -7,6 +7,9 @@ import time
 from datetime import datetime
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from fastapi.responses import StreamingResponse
+import asyncio
+from src.infrastructure.database import AsyncSessionLocal
 
 from src.interfaces.api.dependencies import SessionDep
 from src.domain.models import DecisionRecord, PricingRuleIdentity, PricingRuleVersion
@@ -172,7 +175,8 @@ async def decide(payload: DecisionRequest, db: SessionDep):
         computed_output=output,
         governance_status="APPROVED",
         cryptographic_receipt=receipt,
-        execution_latency_ms=latency_ms
+        execution_latency_ms=latency_ms,
+        evaluated_at=datetime.utcfromtimestamp(timestamp)
     )
 
     db.add(record)
@@ -193,26 +197,42 @@ async def audit_decision(receipt: str, db: SessionDep):
     if not record:
         raise HTTPException(status_code=404, detail="Recibo no encontrado en la Decision Database.")
 
-    # Reconstruir el hash
-    # Para hacerlo bien, necesitamos traer el rule_name.
-    # En nuestro schema, DecisionRecord tiene rule_version_id, vamos a buscar su nombre.
+    # Reconstruir el nombre de la regla
     stmt_rule = select(PricingRuleIdentity.name).join(PricingRuleVersion).where(PricingRuleVersion.id == record.rule_version_id)
     rule_name = (await db.execute(stmt_rule)).scalar_one()
 
-    timestamp = int(record.evaluated_at.timestamp())
+    # Reconstruir el timestamp exacto que se usó al crear el recibo
+    # Como lo guardamos con utcfromtimestamp, aplicamos timestamp() 
+    # Aseguramos que sea int (podría tener decimales menores por precisiones en bd)
+    timestamp = int(record.evaluated_at.replace(microsecond=0).timestamp())
     
-    # Not exact because timestamp conversion can lose precision, but for demo we will use the exact payload logic 
-    # Or simply trust the recorded values to rebuild:
+    # 1. Reconstruir el payload exacto
+    receipt_payload = {
+        "agent_id": record.agent_identity,
+        "rule_name": rule_name,
+        "input": record.input_data,
+        "output": record.computed_output,
+        "timestamp": timestamp
+    }
+    receipt_bytes = json.dumps(receipt_payload, sort_keys=True).encode()
+
+    # 2. Generar HMAC esperado
+    expected_receipt = hmac.new(
+        SECRET_KEY,
+        receipt_bytes,
+        hashlib.sha256
+    ).hexdigest()
+
+    # 3. Comparar seguro contra ataques de timing
+    is_valid = hmac.compare_digest(receipt, expected_receipt)
     
-    # As an alternative, let's store the exact timestamp used in the receipt_payload or re-create it exactly.
-    # We will reconstruct it from what we know.
-    
-    # However, to be 100% accurate in this demo API, we'll assume VALID if it exists in DB for now,
-    # and provide the TAMPERED check logic conceptually or exactly if we store the epoch in DB.
-    # We can fetch it directly from the DB.
-    
+    if is_valid:
+        status = "VALID"
+    else:
+        status = "TAMPERED"
+
     return {
-        "status": "VALID",
+        "status": status,
         "verified_at": datetime.utcnow().isoformat(),
         "decision_record": {
             "agent_id": record.agent_identity,
@@ -267,4 +287,42 @@ async def list_decisions(db: SessionDep, limit: int = 50):
             "evaluated_at": r.evaluated_at.isoformat()
         })
     return {"decisions": decisions}
+
+@router.get("/decisions/stream", summary="Obtiene el historial de decisiones en tiempo real usando Server-Sent Events (SSE).")
+async def stream_decisions():
+    async def event_generator():
+        last_seen_id = None
+        while True:
+            try:
+                async with AsyncSessionLocal() as session:
+                    # Traer los registros recientes
+                    stmt = select(DecisionRecord).order_by(DecisionRecord.evaluated_at.desc()).limit(20)
+                    result = await session.execute(stmt)
+                    records = result.scalars().all()
+                    
+                    if records:
+                        latest = records[0]
+                        if latest.id != last_seen_id:
+                            last_seen_id = latest.id
+                            decisions = []
+                            for r in records:
+                                decisions.append({
+                                    "id": str(r.id),
+                                    "agent_identity": r.agent_identity,
+                                    "governance_status": r.governance_status,
+                                    "rule_version_id": str(r.rule_version_id),
+                                    "computed_output": r.computed_output,
+                                    "cryptographic_receipt": r.cryptographic_receipt,
+                                    "execution_latency_ms": r.execution_latency_ms,
+                                    "evaluated_at": r.evaluated_at.isoformat()
+                                })
+                            
+                            # Entregar datos con formato SSE
+                            yield f"data: {json.dumps({'decisions': decisions})}\n\n"
+            except Exception as e:
+                pass # Evitar romper el stream por un pequeño fallo de conexión DB
+            
+            await asyncio.sleep(1) # Intervalo robusto para SSE demo
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 

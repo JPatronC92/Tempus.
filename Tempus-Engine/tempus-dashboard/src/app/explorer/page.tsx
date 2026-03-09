@@ -42,7 +42,7 @@ export default function DecisionExplorer() {
   const handleSimulate = async () => {
     setSimulating(true);
     try {
-      const agents = ['Alpha-Agent-7', 'Sigma-Orchestrator', 'Risk-Evaluator-9', 'Compliance-Bot'];
+      const agents = ['Loan-Approval-AI', 'Sigma-Orchestrator', 'Risk-Evaluator-9', 'Compliance-Bot'];
       const rules = ['credit_policy_v1', 'risk_threshold_alpha', 'fraud_detection_gamma'];
       
       const payload = {
@@ -73,10 +73,31 @@ export default function DecisionExplorer() {
   };
 
   useEffect(() => {
-    fetchDecisions();
-    // Auto refresh every 5 seconds to simulate live timeline
-    const interval = setInterval(fetchDecisions, 5000);
-    return () => clearInterval(interval);
+    fetchDecisions(); // Fetch initial state
+
+    // Initialize Server-Sent Events connection
+    const eventSource = new EventSource(`${API_URL}/api/v1/govern/decisions/stream`);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.decisions) {
+          setDecisions(data.decisions);
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE data", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close();
+      // Optional: Logic to re-initialize EventSource after a delay could go here.
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const handleSelectDecision = async (receipt: string) => {
@@ -192,8 +213,9 @@ export default function DecisionExplorer() {
                   onClick={() => handleVerify(selectedReceipt)}
                   disabled={verifying}
                 >
-                  {verifying ? 'Verifying...' : 'Verify Cryptographic Signature'}
+                  {verifying ? 'Verifying...' : 'Verify Digital Fingerprint'}
                 </button>
+                <p className={styles.helperText}>Checks the database record against its digital signature to mathematically prove no hacker or rogue admin has altered it.</p>
                 {verificationResult === 'VALID' && (
                   <div className={styles.validBadge}>✓ Integrity Verified</div>
                 )}
@@ -231,7 +253,7 @@ export default function DecisionExplorer() {
           ) : (
             <div className={styles.emptyInspector}>
               <div className={styles.emptyIcon}>🔍</div>
-              <p>Select a decision from the timeline to inspect its causal trace and verify its cryptographic receipt.</p>
+              <p><strong>The Black Box is now open.</strong><br/><br/> Select a decision from the timeline to see exactly why the AI acted, and mathematically verify that the record is authentic.</p>
             </div>
           )}
         </section>
