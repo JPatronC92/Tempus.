@@ -22,7 +22,7 @@ try:
 except ImportError:
     RUST_CORE_AVAILABLE = False
 
-SECRET_KEY = b"tempus-governance-key"
+from src.domain.services.crypto import generate_hmac, verify_hmac
 
 router = APIRouter()
 
@@ -94,11 +94,7 @@ async def decide(payload: DecisionRequest, db: SessionDep):
     receipt_bytes = json.dumps(receipt_payload, sort_keys=True).encode()
 
     # 4. Generar HMAC SHA256 (Recibo criptográfico)
-    receipt = hmac.new(
-        SECRET_KEY,
-        receipt_bytes,
-        hashlib.sha256
-    ).hexdigest()
+    receipt = generate_hmac(receipt_bytes)
 
     end_time = time.perf_counter()
     latency_ms = (end_time - start_time) * 1000
@@ -216,15 +212,8 @@ async def audit_decision(receipt: str, db: SessionDep):
     }
     receipt_bytes = json.dumps(receipt_payload, sort_keys=True).encode()
 
-    # 2. Generar HMAC esperado
-    expected_receipt = hmac.new(
-        SECRET_KEY,
-        receipt_bytes,
-        hashlib.sha256
-    ).hexdigest()
-
-    # 3. Comparar seguro contra ataques de timing
-    is_valid = hmac.compare_digest(receipt, expected_receipt)
+    # 2. Verificar HMAC e integridad (seguro contra ataques de timing internamente)
+    is_valid = verify_hmac(receipt_bytes, receipt)
     
     if is_valid:
         status = "VALID"

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from src.domain.services.crypto import canonicalize_payload, sha256_hash
+from src.domain.services.crypto import canonicalize_payload, generate_hmac, verify_hmac
 
 def test_canonicalize_payload_order_independence():
     """Test that two JSON dicts with different key orders generate the same hash"""
@@ -23,7 +23,7 @@ def test_canonicalize_payload_order_independence():
     )
 
     assert payload1 == payload2
-    assert sha256_hash(payload1) == sha256_hash(payload2)
+    assert generate_hmac(payload1, b"test_secret") == generate_hmac(payload2, b"test_secret")
 
 def test_canonicalize_payload_change_modifies_hash():
     """Test that modifying a single field changes the generated hash"""
@@ -45,4 +45,13 @@ def test_canonicalize_payload_change_modifies_hash():
         logica_json=json_base
     )
 
-    assert sha256_hash(payload_base) != sha256_hash(payload_modified)
+    assert generate_hmac(payload_base, b"test_secret") != generate_hmac(payload_modified, b"test_secret")
+
+def test_verify_hmac():
+    payload = b"dummy_payload"
+    secret = b"my_super_secret"
+    h = generate_hmac(payload, secret)
+    
+    assert verify_hmac(payload, h, secret) is True
+    assert verify_hmac(payload, h, b"wrong_secret") is False
+    assert verify_hmac(b"tampered", h, secret) is False

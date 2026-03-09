@@ -17,8 +17,8 @@ export default function Pitch() {
           <p className="text-sm text-[#94a3b8]">Our deterministic Rust engine evaluates the action against hard corporate rules.</p>
         </div>
         <div className="bg-[rgba(255,255,255,0.02)] p-6 rounded-xl border border-[rgba(255,255,255,0.05)]">
-          <h3 className="text-[#818cf8] font-bold mb-2">3. Cryptographic Receipt</h3>
-          <p className="text-sm text-[#94a3b8]">The causal chain is sealed forever. Ready for audit.</p>
+          <h3 className="text-[#818cf8] font-bold mb-2">3. Sello Criptográfico</h3>
+          <p className="text-sm text-[#94a3b8]">The causal chain is sealed with HMAC-SHA256 forever. Ready for rigorous corporate <b>auditorías</b>.</p>
         </div>
       </div>
     </div>

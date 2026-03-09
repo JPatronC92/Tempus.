@@ -19,13 +19,13 @@ export default function LandingPage() {
           For Corporate AI
         </h1>
         <p className={styles.subtitle}>
-          Tempus DDB is an immutable, cryptographically verifiable ledger that sits between your AI Agents and reality. Audit exactly <b>why</b> your AI acted, down to the byte.
+          Tempus DDB is an immutable, cryptographically verifiable ledger that sits between your AI Agents and reality. <b>Audit</b> exactly why your AI acted, secured by <b>Sellos Criptográficos HMAC-SHA256</b>.
         </p>
 
         {/* Call to Actions */}
         <div className={styles.actions}>
           <Link href="/explorer" className={styles.btnPrimary}>
-            Launch The Black Box ⚡
+            Launch The Audit Panel ⚡
           </Link>
           <a href="https://github.com/jpatron92/DBD" target="_blank" rel="noopener noreferrer" className={styles.btnSecondary}>
             View GitHub
@@ -36,9 +36,9 @@ export default function LandingPage() {
         <div className={styles.features}>
           <div className={styles.featureCard}>
             <IconShieldLock size={32} className={styles.featureIcon} />
-            <h3 className={styles.featureTitle}>Cryptographic Receipts</h3>
+            <h3 className={styles.featureTitle}>Sellos Criptográficos</h3>
             <p className={styles.featureDesc}>
-              Every AI action generates a unique digital fingerprint (Cryptographic Receipt). A mathematical guarantee that decisions weren't tampered with by hackers or rogue employees.
+              Every AI action generates a unique digital fingerprint (HMAC-SHA256 Receipt). A mathematical, tamper-proof guarantee ready for corporate <b>auditorías</b>.
             </p>
           </div>
           

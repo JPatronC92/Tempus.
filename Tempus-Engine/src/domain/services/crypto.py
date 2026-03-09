@@ -39,5 +39,23 @@ def canonicalize_payload(
 
     return canonical_str.encode("utf-8")
 
-def sha256_hash(canonical_bytes: bytes) -> str:
-    return hashlib.sha256(canonical_bytes).hexdigest()
+def generate_hmac(canonical_bytes: bytes, secret_key: bytes | None = None) -> str:
+    """Generates an HMAC-SHA256 hash for the given bytes using the provided or default secret key."""
+    import hmac
+    
+    if secret_key is None:
+        from src.core.config import get_settings
+        # encode settings.SECRET_KEY to bytes
+        secret_key = get_settings().SECRET_KEY.encode('utf-8')
+
+    return hmac.new(
+        secret_key,
+        canonical_bytes,
+        hashlib.sha256
+    ).hexdigest()
+
+def verify_hmac(canonical_bytes: bytes, received_hash: str, secret_key: bytes | None = None) -> bool:
+    """Verifies that the provided hash matches the HMAC-SHA256 of the canonical bytes."""
+    import hmac
+    expected_hash = generate_hmac(canonical_bytes, secret_key)
+    return hmac.compare_digest(received_hash, expected_hash)

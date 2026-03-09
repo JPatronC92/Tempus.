@@ -207,20 +207,23 @@ export default function DecisionExplorer() {
           {selectedReceipt ? (
             <div className={styles.inspector}>
               <div className={styles.inspectorHeader}>
-                <h2>Cryptographic Receipt</h2>
+                <h2>Sello Criptográfico (HMAC-SHA256)</h2>
                 <button 
                   className={styles.verifyBtn} 
                   onClick={() => handleVerify(selectedReceipt)}
                   disabled={verifying}
                 >
-                  {verifying ? 'Verifying...' : 'Verify Digital Fingerprint'}
+                  {verifying ? 'Auditing...' : 'Ejecutar Auditoría Matemática'}
                 </button>
                 <p className={styles.helperText}>Checks the database record against its digital signature to mathematically prove no hacker or rogue admin has altered it.</p>
                 {verificationResult === 'VALID' && (
-                  <div className={styles.validBadge}>✓ Integrity Verified</div>
+                  <div className={styles.validBadge}>✓ Sello Auténtico y Verificado</div>
                 )}
                 {verificationResult === 'TAMPERED' && (
-                  <div className={styles.invalidBadge}>✗ Tampered Record</div>
+                  <div className={styles.invalidBadge}>
+                    <span className={styles.alertIcon}>🚨</span>
+                    ALERTA ROJA: MANIPULACIÓN DETECTADA
+                  </div>
                 )}
               </div>
               

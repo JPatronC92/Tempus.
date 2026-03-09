@@ -83,6 +83,7 @@
   letter-spacing: -0.02em;
   background: linear-gradient(to right, var(--text-primary), var(--brand-primary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -318,11 +319,37 @@
 }
 
 .invalidBadge {
-  color: var(--danger);
-  font-weight: 600;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  animation: redAlertPulse 1.5s infinite alternate;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+.alertIcon {
+  font-size: 1.5rem;
+  animation: warningShake 0.5s infinite;
+}
+
+@keyframes redAlertPulse {
+  from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.1); }
+  to { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.25); }
+}
+
+@keyframes warningShake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
 }
 
 .hashBox {
